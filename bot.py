@@ -8,7 +8,7 @@ rankedStats = {}
 
 players = ["player1","player2","player3"]
 
-notificationChannelId = "830699391907266591"
+notificationChannelId = ""
 
 bot = commands.Bot(command_prefix='!')
 
