@@ -11,6 +11,7 @@ bot = commands.Bot(command_prefix='!')
 def getApexProfile(username):
     r = requests.get(f"https://public-api.tracker.gg/apex/v1/standard/profile/5/{username}",headers={"TRN-Api-Key":APIKEY})
     return json.loads(r.text)
+
 def getRankedStats(profile):
     rankInfo = []
     for x in profile["stats"]:
