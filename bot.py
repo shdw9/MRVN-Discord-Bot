@@ -11,21 +11,21 @@ bot = commands.Bot(command_prefix='!')
 def getApexProfile(username):
     r = requests.get(f"https://public-api.tracker.gg/apex/v1/standard/profile/5/{username}",headers={"TRN-Api-Key":APIKEY})
     return json.loads(r.text)
+def getRankedStats(profile):
+    rankInfo = []
+    for x in profile["stats"]:
+        if x["metadata"]["key"] == "RankScore" or x["metadata"]["key"] == "ArenaRankScore":
+            rankInfo.append(x)
+    return rankInfo
 
 def getRankInformation(username):
     profile = getApexProfile(username)["data"]
-    try:
-        rankName3v3 = profile["stats"][3]["metadata"]["description"]
-        rankPoints3v3 = profile["stats"][3]["value"]
-    except:
-        rankName3v3 = "N/A"
-        rankPoints3v3 = 0.0
-    try:
-        rankNameArena = profile["stats"][4]["metadata"]["description"]
-        rankPointsArena = profile["stats"][4]["value"]
-    except:
-        rankNameArena = "N/A"
-        rankPointsArena = 0.0
+    
+    rankedInfo = getRankedStats(profile)
+    rankName3v3 = rankedInfo[0]["metadata"]["description"]
+    rankPoints3v3 = rankedInfo[0]["value"]
+    rankNameArena = rankedInfo[1]["metadata"]["description"]
+    rankPointsArena = rankedInfo[1]["value"]
     avatarUrl = profile["metadata"]["avatarUrl"]
     level = profile["metadata"]["level"]
 
@@ -46,18 +46,17 @@ async def on_command_error(ctx, error):
     raise error
 
 @bot.command()
-async def stats(ctx, username):
-    print("grabbignm info")
+async def apex(ctx, username):
     try:
         profile = getRankInformation(username)
-        embed=discord.Embed(description="Level " + str(profile[1]),timestamp=datetime.datetime.utcnow())
-        embed.set_author(name=username + "'s stats",icon_url=profile[2])
-        embed.set_thumbnail(url=profile[7])
-        embed.add_field(name="Battle Royale",value=profile[3] + " - " + str(profile[4]))
-        embed.add_field(name="Arenas",value=profile[5] + " - " + str(profile[6]))
-        await ctx.reply(embed=embed)
-    except Exception as e:
-        print(e)
-        await ctx.message.add_reaction('❌')
+    except:
+        await ctx.reply("That player does not exist!")
+        return
+    embed=discord.Embed(description="Level " + str(profile[1]),timestamp=datetime.datetime.utcnow())
+    embed.set_author(name=username + "'s stats",icon_url=profile[2])
+    embed.set_thumbnail(url=profile[7])
+    embed.add_field(name="Battle Royale",value=profile[3] + " - " + str(profile[4]))
+    embed.add_field(name="Arenas",value=profile[5] + " - " + str(profile[6]))
+    await ctx.reply(embed=embed)
 
 bot.run("")
