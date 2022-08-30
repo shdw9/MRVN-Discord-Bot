@@ -1,4 +1,4 @@
-# discord-apex-tracker
+# MRVN
 Apex Legends Discord bot that tracks player stats using tracker.gg's API and apexlegendsapi.com's API
 
 tracker.gg - profile information<br><br>
