@@ -59,8 +59,8 @@ async def checkRank(player):
 
     async def lossRP(queue,old,new,avatarUrl,rank):
         embed=discord.Embed(description="*-" + str(int(old) - int(new)) + "* RP in " + queue,timestamp=datetime.datetime.utcnow(), color=0xE7548C)
-        embed.set_author(name="🚨 " + player.upper() + " LP UPDATE 🚨",icon_url=avatarUrl)
-        embed.add_field(name=queue,value=rank + " - " + str(new) + " RP")
+        embed.set_author(name="🚨 " + player.upper() + " RP UPDATE 🚨",icon_url=avatarUrl)
+        embed.add_field(name=queue.upper(),value=rank + " - " + str(new) + " RP")
         embed.set_footer(text="powered by shdw 👻",icon_url="https://i.imgur.com/ri6NrsN.png")
         embed.set_thumbnail(url="https://i.imgur.com/bTORHF3.png")
         await bot.get_channel(int(notificationChannelId)).send(embed=embed)
@@ -68,7 +68,7 @@ async def checkRank(player):
     async def gainRP(queue,old,new,avatarUrl,rank):
         embed=discord.Embed(description="**+" + str(int(new)-int(old)) + "** RP in " + queue,timestamp=datetime.datetime.utcnow(), color=0x62C979)
         embed.set_author(name="🚨 " + player.upper() + " RP UPDATE 🚨",icon_url=avatarUrl)
-        embed.add_field(name=queue,value=rank + " - " + str(new) + " RP")
+        embed.add_field(name=queue.upper(),value=rank + " - " + str(new) + " RP")
         embed.set_footer(text="powered by shdw 👻",icon_url="https://i.imgur.com/ri6NrsN.png")
         embed.set_thumbnail(url="https://i.imgur.com/0m1B3Et.png")
         await bot.get_channel(int(notificationChannelId)).send(embed=embed)
@@ -88,6 +88,8 @@ async def checkRank(player):
         await lossRP("Arenas",rankedStats[player][1]["rp"],rankPointsArena,avatarUrl,rankNameArena)
     elif int(rankPointsArena) > int(rankedStats[player][1]["rp"]):
         await gainRP("Arenas",rankedStats[player][1]["rp"],rankPointsArena,avatarUrl,rankNameArena)
+
+    rankedStats[player]=[{"rank":rankNameBR,"rp":rankPointsBR},{"rank":rankNameArena,"rp":rankPointsArena}]
         
 async def background_task():
     await bot.wait_until_ready()
