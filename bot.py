@@ -2,7 +2,9 @@ from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 import discord, asyncio, datetime, random, asyncio, json, requests
 
-APIKEY = "" #TRN API KEY
+TRN_APIKEY = "" #API KEY FROM https://tracker.gg/
+
+APIKEY = "" #API KEY FROM https://portal.apexlegendsapi.com/
 
 rankedStats = {}
 
@@ -13,39 +15,43 @@ notificationChannelId = ""
 bot = commands.Bot(command_prefix='!')
 
 def getApexProfile(username):
-    r = requests.get(f"https://public-api.tracker.gg/apex/v1/standard/profile/5/{username}",headers={"TRN-Api-Key":APIKEY})
-    return json.loads(r.text)
+    while(True):
+        try:
+            r = requests.get(f"https://public-api.tracker.gg/apex/v1/standard/profile/5/{username}",headers={"TRN-Api-Key":TRN_APIKEY})
+            meow = json.loads(r.text)
+            meow["data"]
+            return meow
+        except:
+            pass
 
-def getRankedStats(profile):
-    rankInfo = []
-    for x in profile["stats"]:
-        if x["metadata"]["key"] == "RankScore" or x["metadata"]["key"] == "ArenaRankScore":
-            rankInfo.append(x)
-    return rankInfo
+
+def getRankedInfo(username):
+    r = requests.get(f"https://api.mozambiquehe.re/bridge?auth={APIKEY}&player={username}&platform=PC")
+    return r.json()
 
 def getRankInformation(username):
     profile = getApexProfile(username)["data"]
     
-    rankedInfo = getRankedStats(profile)
-    rankNameBR = rankedInfo[0]["metadata"]["description"]
-    rankPointsBR = rankedInfo[0]["value"]
-    rankNameArena = rankedInfo[1]["metadata"]["description"]
-    rankPointsArena = rankedInfo[1]["value"]
+    rankedInfo = getRankedInfo(username)
+    rankNameBR = rankedInfo["global"]["rank"]["rankName"] + " " + str(rankedInfo["global"]["rank"]["rankDiv"])
+    rankPointsBR = rankedInfo["global"]["rank"]["rankScore"]
+    rankNameArena = rankedInfo["global"]["arena"]["rankName"] + " " + str(rankedInfo["global"]["arena"]["rankDiv"])
+    rankPointsArena = rankedInfo["global"]["arena"]["rankScore"]
     avatarUrl = profile["metadata"]["avatarUrl"]
     level = profile["metadata"]["level"]
 
     # save to hashmap
     rankedStats[username]=[{"rank":rankNameBR,"rp":rankPointsBR},{"rank":rankNameArena,"rp":rankPointsArena}]
 
-    return [username,level,avatarUrl,rankNameBR,rankPointsBR,rankNameArena,rankPointsArena,profile["metadata"]["rankImage"]]
+    return [username,level,avatarUrl,rankNameBR,rankPointsBR,rankNameArena,rankPointsArena,rankedInfo["global"]["rank"]["rankImg"]]
 
 async def checkRank(player):
     profile = getApexProfile(player)["data"]
-    rankedInfo = getRankedStats(profile)
-    rankNameBR = rankedInfo[0]["metadata"]["description"]
-    rankPointsBR = rankedInfo[0]["value"]
-    rankNameArena = rankedInfo[1]["metadata"]["description"]
-    rankPointsArena = rankedInfo[1]["value"]
+    rankedInfo = getRankedInfo(player)
+    rankNameBR = rankedInfo["global"]["rank"]["rankName"] + " " + str(rankedInfo["global"]["rank"]["rankDiv"])
+    rankPointsBR = rankedInfo["global"]["rank"]["rankScore"]
+    rankNameArena = rankedInfo["global"]["arena"]["rankName"] + " " + str(rankedInfo["global"]["arena"]["rankDiv"])
+    rankPointsArena = rankedInfo["global"]["arena"]["rankScore"]
     rankImage = profile["metadata"]["rankImage"]
     avatarUrl = profile["metadata"]["avatarUrl"]
 
@@ -59,8 +65,8 @@ async def checkRank(player):
 
     async def lossRP(queue,old,new,avatarUrl,rank):
         embed=discord.Embed(description="*-" + str(int(old) - int(new)) + "* RP in " + queue,timestamp=datetime.datetime.utcnow(), color=0xE7548C)
-        embed.set_author(name="🚨 " + player.upper() + " RP UPDATE 🚨",icon_url=avatarUrl)
-        embed.add_field(name=queue.upper(),value=rank + " - " + str(new) + " RP")
+        embed.set_author(name="🚨 " + player.upper() + " LP UPDATE 🚨",icon_url=avatarUrl)
+        embed.add_field(name=queue,value=rank + " - " + str(new) + " RP")
         embed.set_footer(text="powered by shdw 👻",icon_url="https://i.imgur.com/ri6NrsN.png")
         embed.set_thumbnail(url="https://i.imgur.com/bTORHF3.png")
         await bot.get_channel(int(notificationChannelId)).send(embed=embed)
@@ -68,14 +74,14 @@ async def checkRank(player):
     async def gainRP(queue,old,new,avatarUrl,rank):
         embed=discord.Embed(description="**+" + str(int(new)-int(old)) + "** RP in " + queue,timestamp=datetime.datetime.utcnow(), color=0x62C979)
         embed.set_author(name="🚨 " + player.upper() + " RP UPDATE 🚨",icon_url=avatarUrl)
-        embed.add_field(name=queue.upper(),value=rank + " - " + str(new) + " RP")
+        embed.add_field(name=queue,value=rank + " - " + str(new) + " RP")
         embed.set_footer(text="powered by shdw 👻",icon_url="https://i.imgur.com/ri6NrsN.png")
         embed.set_thumbnail(url="https://i.imgur.com/0m1B3Et.png")
         await bot.get_channel(int(notificationChannelId)).send(embed=embed)
 
     # br
     if not rankNameBR == rankedStats[player][0]["rank"]:
-        await rankUpdate("Battle Royale",rankedStats[player][0]["rank"],rankNameBR,rankImage,avatarUrl)
+        await rankUpdate("Battle Royale",rankedStats[player][0]["rank"],rankNameBR,rankedInfo["global"]["rank"]["rankImg"],avatarUrl)
     elif int(rankPointsBR) < int(rankedStats[player][0]["rp"]):
         await lossRP("Battle Royale",rankedStats[player][0]["rp"],rankPointsBR,avatarUrl,rankNameBR)
     elif int(rankPointsBR) > int(rankedStats[player][0]["rp"]):
@@ -117,6 +123,7 @@ async def on_command_error(ctx, error):
 async def apex(ctx, username):
     try:
         profile = getRankInformation(username)
+        rankedInfo = getRankedInfo(username)
         print(f"Pulled {username}'s APEX data .")
     except:
         await ctx.reply("That player does not exist!")
@@ -125,8 +132,8 @@ async def apex(ctx, username):
     embed.set_author(name=username + "'s stats",icon_url=profile[2])
     embed.set_thumbnail(url=profile[7])
     embed.set_footer(text="from apex.tracker.gg")
-    embed.add_field(name="Battle Royale",value=profile[3] + " - " + str(profile[4]))
-    embed.add_field(name="Arenas",value=profile[5] + " - " + str(profile[6]))
+    embed.add_field(name="Battle Royale",value=rankedInfo["global"]["rank"]["rankName"] + " " + str(rankedInfo["global"]["rank"]["rankDiv"]) + " - " + str(rankedInfo["global"]["rank"]["rankScore"]))
+    embed.add_field(name="Arenas",value=rankedInfo["global"]["arena"]["rankName"] + " " + str(rankedInfo["global"]["arena"]["rankDiv"]) + " - " + str(rankedInfo["global"]["arena"]["rankScore"]))
     await ctx.reply(embed=embed)
 
 bot.loop.create_task(background_task())
