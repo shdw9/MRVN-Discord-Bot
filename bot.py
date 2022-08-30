@@ -14,10 +14,18 @@ def getApexProfile(username):
 
 def getRankInformation(username):
     profile = getApexProfile(username)["data"]
-    rankName3v3 = profile["stats"][3]["metadata"]["description"]
-    rankPoints3v3 = profile["stats"][3]["value"]
-    rankNameArena = profile["stats"][4]["metadata"]["description"]
-    rankPointsArena = profile["stats"][4]["value"]
+    try:
+        rankName3v3 = profile["stats"][3]["metadata"]["description"]
+        rankPoints3v3 = profile["stats"][3]["value"]
+    except:
+        rankName3v3 = "N/A"
+        rankPoints3v3 = 0.0
+    try:
+        rankNameArena = profile["stats"][4]["metadata"]["description"]
+        rankPointsArena = profile["stats"][4]["value"]
+    except:
+        rankNameArena = "N/A"
+        rankPointsArena = 0.0
     avatarUrl = profile["metadata"]["avatarUrl"]
     level = profile["metadata"]["level"]
 
@@ -39,6 +47,7 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def stats(ctx, username):
+    print("grabbignm info")
     try:
         profile = getRankInformation(username)
         embed=discord.Embed(description="Level " + str(profile[1]),timestamp=datetime.datetime.utcnow())
@@ -47,7 +56,8 @@ async def stats(ctx, username):
         embed.add_field(name="Battle Royale",value=profile[3] + " - " + str(profile[4]))
         embed.add_field(name="Arenas",value=profile[5] + " - " + str(profile[6]))
         await ctx.reply(embed=embed)
-    except:
+    except Exception as e:
+        print(e)
         await ctx.message.add_reaction('❌')
 
 bot.run("")
